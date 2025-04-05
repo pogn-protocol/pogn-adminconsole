@@ -22,7 +22,6 @@ function App() {
   const [lastPongTimes, setLastPongTimes] = useState({});
   const [pongTriggers, setPongTriggers] = useState({});
 
-  //useeffect setlobby connect
   useEffect(() => {
     setLobbyConnectUrl("ws://localhost:8081");
     setLobbyConnectId("lobby2");
