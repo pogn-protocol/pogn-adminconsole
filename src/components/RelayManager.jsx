@@ -11,6 +11,7 @@ const RelayManager = ({
   setRemoveRelayConnections,
   onSelect,
   selectedRelayId,
+  pongTriggers,
 }) => {
   const [closingConnections, setClosingConnections] = useState(new Map());
   const manualCloseRefs = useRef({});
@@ -86,6 +87,7 @@ const RelayManager = ({
           setRemoveRelayConnections={setRemoveRelayConnections}
           onSelect={onSelect}
           selectedRelayId={selectedRelayId}
+          pongTriggers={pongTriggers} // ✅ here
         />
       ))}
     </div>

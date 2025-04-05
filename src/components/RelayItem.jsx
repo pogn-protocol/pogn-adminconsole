@@ -13,6 +13,7 @@ const RelayItem = ({
   onSelect,
   selectedRelayId,
   setRemoveRelayConnections,
+  pongTriggers,
 }) => {
   const { readyState } = useRelayConnection({
     id,
@@ -27,9 +28,19 @@ const RelayItem = ({
   });
 
   const [countdown, setCountdown] = useState(null);
+  const [ring, setRing] = useState(false);
   console.log("Comparing IDs:", selectedRelayId, "===", id);
   console.log("RelayItem ID:", id, "URL:", url, "Type:", type);
   const isSelected = selectedRelayId === id;
+
+  const myPongTrigger = pongTriggers?.[id];
+
+  useEffect(() => {
+    if (!myPongTrigger) return;
+    setRing(true);
+    const timeout = setTimeout(() => setRing(false), 600);
+    return () => clearTimeout(timeout);
+  }, [myPongTrigger]);
 
   useEffect(() => {
     if (!closingConnections.has(id)) return;
@@ -75,15 +86,18 @@ const RelayItem = ({
           ? "🟠"
           : "⚪️"}
       </div>
-
       <button
         onClick={(e) => {
           e.stopPropagation();
           sendMessageToRelay(id, { payload: { type: "ping" } });
         }}
-        className="mt-2 bg-blue-500 hover:bg-blue-600 text-white text-sm px-3 py-1 rounded"
+        className={`mt-2 text-sm px-3 py-1 rounded transition-transform duration-150 ${
+          ring
+            ? "animate-bounce bg-green-500 text-white"
+            : "bg-blue-500 hover:bg-blue-600 text-white"
+        }`}
       >
-        Ping 🛎️
+        {ring ? "Pong! 🛎️" : "Ping 🛎️"}
       </button>
     </div>
   );

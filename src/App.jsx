@@ -19,6 +19,8 @@ function App() {
   const [lobbyConnectUrl, setLobbyConnectUrl] = useState("");
   const [lobbyConnectId, setLobbyConnectId] = useState("");
   const [selectedLobbyId, setSelectedLobbyId] = useState("lobby1");
+  const [lastPongTimes, setLastPongTimes] = useState({});
+  const [pongTriggers, setPongTriggers] = useState({});
 
   //useeffect setlobby connect
   useEffect(() => {
@@ -27,7 +29,15 @@ function App() {
   }, []);
 
   const handleMessage = (id, message) => {
-    console.log("📩 Received:", message);
+    console.log("📥 Received:", message);
+
+    if (message?.payload?.type === "pong") {
+      setPongTriggers((prev) => ({
+        ...prev,
+        [id]: uuidv4(), // or just a number increment
+      }));
+    }
+
     setMessagesReceived((prev) => [...prev, message]);
   };
 
@@ -73,6 +83,7 @@ function App() {
             setConnections={setConnections}
             onSelect={onSelect}
             selectedRelayId={selectedRelayId}
+            pongTriggers={pongTriggers}
           />
         </div>
 
