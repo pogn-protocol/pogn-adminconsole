@@ -5,11 +5,12 @@ import "react-json-view-lite/dist/index.css";
 import RelayManager from "./components/RelayManager";
 import Messages from "./components/Messages";
 import LobbyView from "./components/LobbyView";
+import pognClientConfigs from "./pognAdminConsoleConfigs";
 
 function App() {
   const [connections, setConnections] = useState(new Map());
   const [addRelayConnections, setAddRelayConnections] = useState([
-    { id: "lobby1", url: "ws://localhost:8080", type: "lobby" },
+    { id: "lobby1", url: pognClientConfigs.LOBBY_WS_URL, type: "lobby" },
   ]);
   const [removeRelayConnections, setRemoveRelayConnections] = useState([]);
   const [sendMessageToUrl, setSendMessageToUrl] = useState(() => () => {});
@@ -23,8 +24,8 @@ function App() {
   const [pongTriggers, setPongTriggers] = useState({});
 
   useEffect(() => {
-    setLobbyConnectUrl("ws://localhost:8081");
-    setLobbyConnectId("lobby2");
+    setLobbyConnectUrl(pognClientConfigs.LOBBY_WS_URL);
+    setLobbyConnectId("lobby1");
   }, []);
 
   const handleMessage = (id, message) => {
@@ -106,6 +107,12 @@ function App() {
             <button
               className="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded"
               onClick={() => {
+                console.log(
+                  "Adding lobby connection url:",
+                  lobbyConnectUrl,
+                  "id:",
+                  lobbyConnectId
+                );
                 if (!lobbyConnectUrl || !lobbyConnectId) return;
                 setAddRelayConnections((prev) => [
                   ...prev,
