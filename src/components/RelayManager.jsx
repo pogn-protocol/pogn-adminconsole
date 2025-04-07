@@ -77,6 +77,20 @@ const RelayManager = ({
     }
   }, [removeRelayConnections, setConnections, setRemoveRelayConnections]);
 
+  useEffect(() => {
+    if (connections && connections.size > 0 && !selectedRelayId) {
+      const firstRelayId = connections.keys().next().value;
+      setSelectedRelayId(firstRelayId);
+    }
+  }, [connections, selectedRelayId, setSelectedRelayId]);
+
+  useEffect(() => {
+    if (selectedRelayId && !connections.has(selectedRelayId)) {
+      const nextId = connections.keys().next().value || null;
+      setSelectedRelayId(nextId);
+    }
+  }, [connections, selectedRelayId, setSelectedRelayId]);
+
   return (
     <div className="flex flex-row gap-1 overflow-x-auto p-4 w-full">
       {Array.from(connections.values()).map((relay) => (
