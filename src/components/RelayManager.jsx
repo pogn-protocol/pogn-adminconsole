@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import RelayItem from "./RelayItem";
+import { v4 as uuidv4 } from "uuid";
 
 const RelayManager = ({
   addRelayConnections,
@@ -18,6 +19,17 @@ const RelayManager = ({
 
   const sendMessageToRelay = useCallback(
     (id, message) => {
+      if (!connections.has(id)) {
+        console.error("Relay not found:", id);
+        return;
+      }
+      if (!message?.uuid) {
+        message.uuid = uuidv4();
+      }
+      if (!message.relayId) {
+        message.relayId = id;
+      }
+      console.log("📤 Sending:", message, "to relayId", id);
       const conn = connections.get(id);
       conn?.sendJsonMessage?.(message);
     },

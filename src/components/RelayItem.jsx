@@ -29,11 +29,13 @@ const RelayItem = ({
 
   const [countdown, setCountdown] = useState(null);
   const [ring, setRing] = useState(false);
+  console.log("pongTriggers:", pongTriggers);
   console.log("Comparing IDs:", selectedRelayId, "===", id);
   console.log("RelayItem ID:", id, "URL:", url, "Type:", type);
   const isSelected = selectedRelayId === id;
 
   const myPongTrigger = pongTriggers?.[id];
+  console.log("myPongTrigger:", myPongTrigger);
 
   useEffect(() => {
     if (!myPongTrigger) return;
@@ -86,10 +88,12 @@ const RelayItem = ({
           ? "🟠"
           : "⚪️"}
       </div>
+      <span className="text-xs ml-2">{id}</span>
       <button
         onClick={(e) => {
           e.stopPropagation();
-          sendMessageToRelay(id, { payload: { type: "ping" } });
+          console.log("Sending ping to relay:", id, url, type);
+          sendMessageToRelay(id, { relayId: id, payload: { type: "ping" } });
         }}
         className={`mt-2 text-sm px-3 py-1 rounded transition-transform duration-150 ${
           ring

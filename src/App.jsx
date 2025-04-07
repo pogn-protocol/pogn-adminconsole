@@ -32,9 +32,11 @@ function App() {
     console.log("📥 Received:", message);
 
     if (message?.payload?.type === "pong") {
+      const relayId = message.relayId || id;
+      console.log(`🎯 Setting pongTrigger for ${relayId}`);
       setPongTriggers((prev) => ({
         ...prev,
-        [id]: uuidv4(), // or just a number increment
+        [relayId]: uuidv4(), // or message.uuid
       }));
     }
 
@@ -49,7 +51,7 @@ function App() {
       payload: {
         ...payload,
         type: payload.type || connection.type,
-        action: payload.action || "ping",
+        action: payload.action,
         playerId: payload.playerId || "admin",
       },
       uuid: uuidv4(),
@@ -148,7 +150,11 @@ function App() {
             className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
             onClick={() =>
               sendMessage({
-                payload: { type: "lobby", action: "refresh" },
+                payload: {
+                  type: "lobby",
+                  action: "refreshLobby",
+                  lobbyId: selectedRelayId,
+                },
                 relayId: selectedRelayId,
               })
             }
