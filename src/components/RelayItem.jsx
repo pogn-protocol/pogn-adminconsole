@@ -1,72 +1,128 @@
-import React, { useEffect, useState } from "react";
-import useRelayConnection from "../hooks/useRelayConnection";
+import React, { useEffect, useState, useCallback, useRef } from "react";
+import useWebSocket from "react-use-websocket";
+import { v4 as uuid } from "uuid";
 
 const RelayItem = ({
   id,
   url,
   type,
   onMessage,
-  sendMessageToRelay,
   setConnections,
   closingConnections,
-  manualCloseRef,
-  onSelect,
-  selectedRelayId,
   setRemoveRelayConnections,
-  pongTriggers,
+  manualCloseRef,
+  selectedRelayId,
+  setSelectedRelayId,
 }) => {
-  const { readyState } = useRelayConnection({
+  const [prevMessage, setPrevMessage] = useState(null);
+  const reconnectTimeoutRef = useRef(null);
+  const [countdown, setCountdown] = useState(null);
+  const [ring, setRing] = useState(false);
+
+  const isSelected = selectedRelayId === id;
+
+  const { sendJsonMessage, lastJsonMessage, readyState } = useWebSocket(url, {
+    //shouldReconnect: () => !manualCloseRef.current,
+
+    shouldReconnect: () => {
+      // defensive check to prevent crashing if manualCloseRef is undefined
+      return !(manualCloseRef && manualCloseRef.current);
+    },
+
+    reconnectAttempts: 5,
+    reconnectInterval: 3000,
+    share: true,
+  });
+
+  // 🔁 Update connection in global map
+  const updateConnection = useCallback(() => {
+    setConnections((prev) => {
+      const newMap = new Map(prev);
+      const existing = newMap.get(id) || {};
+      newMap.set(id, {
+        ...existing,
+        sendJsonMessage,
+        readyState,
+        url,
+        type,
+        customReadyState:
+          readyState === 3 && !closingConnections.has(id) ? 4 : readyState,
+      });
+      return newMap;
+    });
+  }, [
     id,
     url,
     type,
-    onMessage,
+    sendJsonMessage,
+    readyState,
     setConnections,
     closingConnections,
     manualCloseRef,
-    onSelect,
     selectedRelayId,
-  });
-
-  const [countdown, setCountdown] = useState(null);
-  const [ring, setRing] = useState(false);
-  console.log("pongTriggers:", pongTriggers);
-  console.log("Comparing IDs:", selectedRelayId, "===", id);
-  console.log("RelayItem ID:", id, "URL:", url, "Type:", type);
-  const isSelected = selectedRelayId === id;
-
-  const myPongTrigger = pongTriggers?.[id];
-  console.log("myPongTrigger:", myPongTrigger);
+    setSelectedRelayId,
+  ]);
 
   useEffect(() => {
-    if (!myPongTrigger) return;
-    setRing(true);
-    const timeout = setTimeout(() => setRing(false), 600);
-    return () => clearTimeout(timeout);
-  }, [myPongTrigger]);
+    updateConnection();
+
+    if (readyState === 1) {
+      clearTimeout(reconnectTimeoutRef.current);
+    } else if (readyState === 3 && !closingConnections.has(id)) {
+      reconnectTimeoutRef.current = setTimeout(() => {
+        setConnections((prev) => {
+          const newMap = new Map(prev);
+          newMap.delete(id);
+          return newMap;
+        });
+      }, 10000);
+    }
+  }, [readyState, updateConnection]);
+
+  useEffect(() => {
+    if (lastJsonMessage && lastJsonMessage !== prevMessage) {
+      onMessage(id, lastJsonMessage);
+      setPrevMessage(lastJsonMessage);
+
+      if (
+        lastJsonMessage &&
+        lastJsonMessage.payload?.type === "pong" &&
+        lastJsonMessage.relayId === id
+      ) {
+        setRing(true);
+        setTimeout(() => setRing(false), 600);
+      }
+    }
+  }, [lastJsonMessage, id, onMessage, prevMessage]);
 
   useEffect(() => {
     if (!closingConnections.has(id)) return;
 
     setCountdown(closingConnections.get(id)?.countdown || 5);
     const interval = setInterval(() => {
-      setCountdown((prev) => (prev === 1 ? clearInterval(interval) : prev - 1));
+      setCountdown((prev) => {
+        if (prev === 1) {
+          clearInterval(interval);
+          return null;
+        }
+        return prev - 1;
+      });
     }, 1000);
 
     return () => clearInterval(interval);
   }, [closingConnections, id]);
 
   return (
-    // <div
-    //   className="relay-item flex flex-col items-center p-3 border rounded hover:bg-gray-100 cursor-pointer gap-2 w-fit"
-    //   onClick={() => onSelect(id)}
-    // >
-    //   <div className="font-semibold">{id}</div>
-
     <div
-      className={`relay-item flex flex-col items-center p-3 border rounded hover:bg-gray-100 cursor-pointer gap-2 w-fit ${
-        isSelected ? "border-green-500 bg-green-50" : "border-gray-300"
+      className={`relay-item flex flex-col items-center p-3 rounded cursor-pointer gap-2 w-fit transition 
+      ${
+        isSelected
+          ? "border-2 border-green-500 bg-green-100 shadow-sm"
+          : "border border-gray-300 bg-white hover:bg-gray-50"
       }`}
-      onClick={() => onSelect(id)}
+      onClick={() => {
+        setSelectedRelayId((prev) => (prev === id ? null : id));
+      }}
     >
       <div
         className="text-2xl cursor-pointer"
@@ -93,7 +149,11 @@ const RelayItem = ({
         onClick={(e) => {
           e.stopPropagation();
           console.log("Sending ping to relay:", id, url, type);
-          sendMessageToRelay(id, { relayId: id, payload: { type: "ping" } });
+          sendJsonMessage({
+            relayId: id,
+            uuid: uuid(),
+            payload: { type: "ping", message: id },
+          });
         }}
         className={`mt-2 text-sm px-3 py-1 rounded transition-transform duration-150 ${
           ring

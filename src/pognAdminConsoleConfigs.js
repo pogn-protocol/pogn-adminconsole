@@ -2,7 +2,8 @@
 
 //const ENV = import.meta.env.MODE;
 //const ENV = "development"; // Change this to "development" for local testing
-const ENV = import.meta.env.MODE || "development"; // Use the environment variable or default to development
+//const ENV = import.meta.env.MODE || "development"; // Use the environment variable or default to development
+const ENV = "production"; // Change this to "development" for local testing
 
 const configs = {
   development: {

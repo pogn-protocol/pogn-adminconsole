@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import RelayItem from "./RelayItem";
-import { v4 as uuidv4 } from "uuid";
 
 const RelayManager = ({
+  setAddRelayConnections,
   addRelayConnections,
   onMessage,
   setSendMessage,
@@ -10,26 +10,14 @@ const RelayManager = ({
   setConnections,
   removeRelayConnections,
   setRemoveRelayConnections,
-  onSelect,
   selectedRelayId,
-  pongTriggers,
+  setSelectedRelayId,
 }) => {
   const [closingConnections, setClosingConnections] = useState(new Map());
   const manualCloseRefs = useRef({});
 
   const sendMessageToRelay = useCallback(
     (id, message) => {
-      if (!connections.has(id)) {
-        console.error("Relay not found:", id);
-        return;
-      }
-      if (!message?.uuid) {
-        message.uuid = uuidv4();
-      }
-      if (!message.relayId) {
-        message.relayId = id;
-      }
-      console.log("📤 Sending:", message, "to relayId", id);
       const conn = connections.get(id);
       conn?.sendJsonMessage?.(message);
     },
@@ -41,19 +29,23 @@ const RelayManager = ({
   }, [sendMessageToRelay, setSendMessage]);
 
   useEffect(() => {
-    if (addRelayConnections?.length) {
-      setConnections((prev) => {
-        const newMap = new Map(prev);
-        addRelayConnections.forEach((relay) => {
-          if (!newMap.has(relay.id)) {
-            manualCloseRefs.current[relay.id] = { current: false };
-            newMap.set(relay.id, relay);
-          }
-        });
-        return newMap;
+    console.log("addRelayConnections", addRelayConnections);
+    if (!Array.isArray(addRelayConnections) || addRelayConnections.length === 0)
+      return;
+
+    setConnections((prev) => {
+      const updated = new Map(prev);
+      addRelayConnections.forEach((relay) => {
+        console.log("Adding relay connection", relay);
+        if (!updated.has(relay.id)) {
+          updated.set(relay.id, { ...relay }); // placeholder only
+        }
       });
-    }
-  }, [addRelayConnections, setConnections]);
+      return updated;
+    });
+
+    setAddRelayConnections([]);
+  }, [addRelayConnections]);
 
   useEffect(() => {
     if (removeRelayConnections?.length) {
@@ -86,7 +78,7 @@ const RelayManager = ({
   }, [removeRelayConnections, setConnections, setRemoveRelayConnections]);
 
   return (
-    <div className="flex flex-row flex-wrap gap-2">
+    <div className="flex flex-row gap-1 overflow-x-auto p-4 w-full">
       {Array.from(connections.values()).map((relay) => (
         <RelayItem
           key={relay.id}
@@ -97,9 +89,9 @@ const RelayManager = ({
           closingConnections={closingConnections}
           manualCloseRef={manualCloseRefs.current[relay.id]}
           setRemoveRelayConnections={setRemoveRelayConnections}
-          onSelect={onSelect}
+          setClosingConnections={setClosingConnections}
           selectedRelayId={selectedRelayId}
-          pongTriggers={pongTriggers} // ✅ here
+          setSelectedRelayId={setSelectedRelayId}
         />
       ))}
     </div>

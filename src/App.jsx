@@ -76,6 +76,7 @@ function App() {
 
         <div className="mt-3">
           <RelayManager
+            setAddRelayConnections={setAddRelayConnections}
             addRelayConnections={addRelayConnections}
             removeRelayConnections={removeRelayConnections}
             setRemoveRelayConnections={setRemoveRelayConnections}
@@ -85,7 +86,7 @@ function App() {
             setConnections={setConnections}
             onSelect={onSelect}
             selectedRelayId={selectedRelayId}
-            pongTriggers={pongTriggers}
+            setSelectedRelayId={setSelectedRelayId}
           />
         </div>
 
