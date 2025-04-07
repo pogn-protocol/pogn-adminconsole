@@ -96,7 +96,7 @@ function App() {
             <input
               type="text"
               className="w-full sm:w-[300px] border border-gray-300 rounded px-3 py-2"
-              placeholder="ws://localhost:8082"
+              placeholder={pognClientConfigs.LOBBY_WS_URL}
               value={lobbyConnectUrl}
               onChange={(e) => setLobbyConnectUrl(e.target.value)}
             />
